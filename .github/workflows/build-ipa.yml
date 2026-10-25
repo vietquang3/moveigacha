@@ -1,0 +1,39 @@
+name: Build IPA
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install
+      - run: npx cap add ios
+      - name: Cho phép http (một số nguồn m3u8/ảnh) + giữ tiếng nền
+        run: |
+          P=ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" $P
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" $P
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" $P
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string audio" $P
+      - run: npx cap sync ios
+      - name: Build (không ký)
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath $PWD/build/App.xcarchive archive \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+      - name: Đóng gói IPA
+        run: |
+          cd ios/App/build
+          mkdir Payload
+          cp -R App.xcarchive/Products/Applications/App.app Payload/
+          zip -qry MovieGacha.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MovieGacha-ipa
+          path: ios/App/build/MovieGacha.ipa
