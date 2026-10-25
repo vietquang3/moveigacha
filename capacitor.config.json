@@ -1,0 +1,8 @@
+{
+  "appId": "com.moviegacha.app",
+  "appName": "Movie Gacha",
+  "webDir": "www",
+  "backgroundColor": "#04050c",
+  "ios": { "contentInset": "never" },
+  "plugins": { "CapacitorHttp": { "enabled": true } }
+}

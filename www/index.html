@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#04050c">
+<meta name="format-detection" content="telephone=no">
+<title>Movie Gacha - Gacha Phim</title>
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg:#04050c;
+  --card-bg:#0a0e1c;
+  --glass:rgba(255,255,255,0.035);
+  --glass-strong:rgba(255,255,255,0.07);
+  --border:rgba(255,255,255,0.08);
+  --muted:#8b98b8;
+  --text:#f2f5fb;
+  --gold:#f2c879;
+  --primary1:#7c5cff;
+  --primary2:#22d3ee;
+  --accent:#ff4d8d;
+  --ease:cubic-bezier(.22,.9,.3,1);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:'Inter',system-ui;
+  background:
+    radial-gradient(ellipse 900px 500px at 12% -10%, rgba(124,92,255,.16), transparent 60%),
+    radial-gradient(ellipse 900px 600px at 88% 10%, rgba(34,211,238,.12), transparent 55%),
+    linear-gradient(180deg,#040509 0%,#070a14 100%);
+  color:var(--text);overflow-x:hidden;letter-spacing:.1px;
+  scrollbar-width:none; -ms-overflow-style:none;}
+
+/* Ẩn thanh scrollbar trên mọi trình duyệt (vẫn cuộn được bình thường) */
+html::-webkit-scrollbar, body::-webkit-scrollbar,
+*::-webkit-scrollbar{ width:0; height:0; display:none; background:transparent; }
+*{ scrollbar-width:none; -ms-overflow-style:none; }
+section{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:80px 20px 120px}
+h1,h2,.book-title,.big-gacha-btn,.watch-head h2{font-family:'Sora',system-ui}
+
+button{background:var(--glass);border:1px solid var(--border);padding:9px 16px;border-radius:100px;color:var(--text);cursor:pointer;
+  transition:transform .25s var(--ease),background .25s,border-color .25s;font-family:'Inter',inherit;font-size:13px;font-weight:500}
+button:hover{transform:translateY(-1px);background:var(--glass-strong);border-color:rgba(255,255,255,.18)}
+button:active{transform:translateY(0) scale(.98)}
+button:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.btn-primary{background:linear-gradient(90deg,var(--primary1),var(--primary2));color:#050510;border:none;font-weight:700}
+
+/* ================== Top loading progress ================== */
+.top-progress{position:fixed;top:0;left:0;height:2px;z-index:70;background:linear-gradient(90deg,var(--primary1),var(--primary2),var(--accent));
+  width:0%;transition:width .5s var(--ease),opacity .6s ease;box-shadow:0 0 10px 1px rgba(124,92,255,.7);opacity:1}
+.top-progress.done{opacity:0}
+
+/* ================== Gacha Section ================== */
+#gachaSection{
+  display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100vh;
+  overflow:hidden;
+  position:relative;padding-top:60px;
+}
+#loadStatus{color:var(--muted);font-size:13px;margin-bottom:22px;text-align:center;max-width:600px;font-variant-numeric:tabular-nums;letter-spacing:.2px}
+.gacha-row{
+  position:relative;display:grid;
+  grid-template-columns:repeat(5, 1fr);
+  grid-auto-rows:auto;
+  justify-items:center;align-items:start;
+  gap:24px;
+  max-width:2000px;
+  padding:20px 12px;
+  transition:transform 0.45s cubic-bezier(.2,.8,.2,1);
+  transform-origin:center center;z-index:20;
+}
+
+.gacha-slot{
+  width:270px;height:400px;perspective:1200px;position:relative;transition:transform .45s var(--ease);
+  display:flex;align-items:center;justify-content:center;
+}
+.gacha-slot:hover{transform:translateY(-8px) scale(1.02);}
+.gacha-slot.selected{transform:translateY(-8px) scale(1.05); z-index:30;}
+
+.card-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.4,.2,.2,1)}
+.card-inner.flipped{transform:rotateY(180deg)}
+.card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:14px;overflow:hidden;
+  box-shadow:0 16px 34px rgba(2,4,12,0.55);background:linear-gradient(180deg,#0d1326,#080c18);display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);
+}
+.card-face .card-img{width:100%;height:100%;object-fit:cover;display:block}
+.card-back{background:url('./backcard.png') center/cover no-repeat, url('./backcard.svg') center/cover no-repeat, linear-gradient(150deg,#151a33,#0a0d1a);display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center}.card-back .reel{font-size:46px}
+.card-back .qmark{font-size:22px;font-weight:800;color:var(--gold);opacity:.85}
+.card-front{transform:rotateY(180deg);flex-direction:column;justify-content:flex-end}
+.card-front .movie-meta{width:100%;padding:8px 10px 10px;background:linear-gradient(0deg,rgba(4,5,10,.92),transparent);position:absolute;left:0;bottom:0}
+.card-front .movie-meta .mname{font-size:12px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-front .movie-meta .mmeta{font-size:10px;color:var(--muted);margin-top:3px}
+
+.gacha-slot::after{
+  content:"";
+  position:absolute;
+  inset:-8px;
+  border-radius:18px;
+  pointer-events:none;
+  z-index:-1;
+  background: conic-gradient(from 120deg, var(--primary1), var(--primary2), var(--accent), var(--primary1));
+  opacity:0;
+  filter: blur(14px);
+  transition:opacity .5s ease;
+}
+.gacha-slot.show-border::after{ opacity:.55; animation:glowPulse 3s ease-in-out infinite alternate; }
+.gacha-slot.selected::before {
+  content: ""; position: absolute; inset: -5px; border-radius: 16px;
+  border: 1.5px solid var(--gold); z-index: 25; pointer-events: none;
+  animation: selectedPulse 1.8s ease-in-out infinite;
+}
+@keyframes selectedPulse { 0%{box-shadow:0 0 8px 0px var(--gold);} 50%{box-shadow:0 0 16px 3px var(--gold);} 100%{box-shadow:0 0 8px 0px var(--gold);} }
+@keyframes glowPulse{ 0%{filter: blur(12px) brightness(1); transform: scale(1);} 100%{filter: blur(18px) brightness(1.4); transform: scale(1.04);} }
+
+/* ================== Gacha Button ================== */
+.big-gacha-btn {
+  position:relative;
+  padding: 46px 110px; font-size: 38px; font-weight: 800; letter-spacing:4px;
+  background: linear-gradient(135deg, var(--primary1), var(--primary2), var(--accent), var(--primary1));
+  background-size:300% 300%;
+  color: #060612; border: none; border-radius: 100px; cursor: pointer; z-index: 40;
+  box-shadow: 0 16px 50px rgba(124,92,255,.45), 0 0 0 3px rgba(255,255,255,.06) inset;
+  transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
+  overflow:visible;
+  isolation:isolate;
+  animation: gachaGradientShift 6s ease infinite, gachaIdleBreathe 2.6s ease-in-out infinite;
+  text-shadow:0 1px 0 rgba(255,255,255,.25);
+}
+/* Vầng hào quang xoay phía sau nút */
+.big-gacha-btn::before {
+  display: none;
+}
+/* Hiệu ứng ánh sáng lướt qua (shine sweep) */
+.big-gacha-btn::after{
+  content:"";
+  position:absolute; inset:0; z-index:-1; border-radius:100px; overflow:hidden;
+  background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,.75) 48%, transparent 62%);
+  background-size:250% 100%;
+  background-position:150% 0;
+  mix-blend-mode:overlay;
+  animation: gachaShine 2.8s ease-in-out infinite;
+}
+@keyframes gachaGradientShift{ 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+@keyframes gachaAuraSpin{ 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+@keyframes gachaShine{ 0%{background-position:150% 0} 55%,100%{background-position:-60% 0} }
+@keyframes gachaIdleBreathe{
+  0%,100%{ transform:translateY(0) scale(1); box-shadow:0 16px 50px rgba(124,92,255,.45), 0 0 0 3px rgba(255,255,255,.06) inset; }
+  50%{ transform:translateY(-4px) scale(1.02); box-shadow:0 22px 60px rgba(124,92,255,.6), 0 0 0 3px rgba(255,255,255,.1) inset; }
+}
+.big-gacha-btn:hover{
+  transform: translateY(-6px) scale(1.08);
+  box-shadow: 0 26px 70px rgba(124,92,255,.65), 0 0 40px 6px rgba(255,77,141,.35);
+  animation-play-state: running;
+}
+.big-gacha-btn:active{ transform: translateY(-2px) scale(1.02); }
+.big-gacha-btn:disabled{
+  opacity:.35;transform:none;cursor:not-allowed;box-shadow:none;
+  animation:none;
+}
+.big-gacha-btn:disabled::before,.big-gacha-btn:disabled::after{ display:none; }
+
+.action-row{display:flex;gap:14px;margin-top:36px;display:none}
+.watch-btn, .reroll-btn{
+  padding: 14px 28px; font-size: 14px; font-weight: 600; border: none; border-radius: 100px;
+  cursor: pointer; z-index: 40; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35); transition: all 0.3s var(--ease);
+}
+.watch-btn{background: linear-gradient(135deg, var(--primary2), #6ee7c9); color:#04121a;}
+.watch-btn:hover{ transform: translateY(-2px); }
+.watch-btn:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.reroll-btn{background:var(--glass);color:var(--text);border:1px solid var(--border)}
+
+/* ================== Book Section ================== */
+#bookSection{width:100%;margin-top:0;padding:50px 20px 110px;background:linear-gradient(180deg,transparent 0%, rgba(124,92,255,0.03) 100%);border-top:1px solid var(--border);z-index:10;align-items:center}
+.book-title{font-size:24px;font-weight:700;margin-bottom:6px;letter-spacing:.2px}
+.book-sub{color:var(--muted);font-size:13px;margin-bottom:20px;font-variant-numeric:tabular-nums}
+.book-controls{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;justify-content:center}
+.book-tabs{display:flex;gap:8px;background:var(--glass);border:1px solid var(--border);padding:4px;border-radius:100px}
+.tab-btn{background:transparent;border:none;padding:8px 18px;border-radius:100px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .25s var(--ease)}
+.tab-btn:hover{color:var(--text);transform:none;background:rgba(255,255,255,.05)}
+.tab-btn.active{background:linear-gradient(90deg,var(--primary1),var(--primary2));color:#050510;box-shadow:0 6px 16px rgba(124,92,255,.3)}
+.book-search-wrap{position:relative;display:flex;align-items:center}
+.book-search-wrap .search-icon{position:absolute;left:14px;font-size:13px;opacity:.6;pointer-events:none}
+#bookSearch{background:var(--glass);border:1px solid var(--border);border-radius:100px;padding:9px 16px 9px 34px;color:var(--text);font-family:'Inter',inherit;font-size:13px;min-width:220px;outline:none;transition:border-color .25s,background .25s}
+#bookSearch:focus{background:var(--glass-strong);border-color:rgba(124,92,255,.5)}
+#bookSearch::placeholder{color:var(--muted)}
+.book-grid{
+  display:grid; grid-template-columns:repeat(3, 1fr); gap:22px; width:100%; max-width:640px; align-items:start;
+}
+.book-empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:50px 20px;font-size:13.5px;line-height:1.6}
+.thumb{ position:relative;border-radius:14px;overflow:visible;background:transparent;cursor:pointer;transition:transform .3s var(--ease); min-height:220px;padding:6px; }
+.thumb:hover{transform:translateY(-6px) scale(1.04);}
+.thumb-inner{ border-radius:12px;overflow:hidden;background:rgba(255,255,255,0.02);box-shadow:0 10px 24px rgba(0,0,0,0.45); position:relative;transition:transform .18s; aspect-ratio:2/3;border:1px solid var(--border);}
+.thumb img{width:100%;height:100%;display:block;object-fit:cover;background:rgba(255,255,255,0.03)}
+.thumb.grayscale .thumb-inner{filter:grayscale(100%) contrast(.8) brightness(.5)}
+.thumb.owned .thumb-inner::after{content:"✓ Đã xem";position:absolute;left:0;right:0;bottom:0;background:rgba(34,211,238,.88);color:#04121a;font-size:10px;font-weight:700;text-align:center;padding:4px 0;letter-spacing:.3px}
+.thumb.inprogress .thumb-inner::after{content:attr(data-progress);position:absolute;left:0;right:0;bottom:0;background:rgba(242,200,121,.9);color:#241300;font-size:10px;font-weight:700;text-align:center;padding:4px 0;letter-spacing:.3px}
+
+.thumb.fade-in { animation: fadeInCard 0.6s var(--ease) forwards; opacity: 0; }
+@keyframes fadeInCard { 0% { opacity: 0; transform: translateY(16px) scale(0.94); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+
+.card-info{
+  position:fixed;z-index:120;min-width:220px;max-width:320px;padding:14px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(4,5,10,0.88));
+  box-shadow:0 16px 44px rgba(2,4,12,0.6);backdrop-filter:blur(10px);pointer-events:none; display:flex;flex-direction:column;gap:6px;border:1px solid var(--border)
+}
+.card-info img{width:100%;height:auto;border-radius:10px;flex-shrink:0;aspect-ratio:2/3;object-fit:cover}
+.card-info .ci-name{font-weight:700;font-size:14px}
+.card-info .ci-meta{font-size:11px;color:var(--muted)}
+.card-info .ci-status{font-size:11px;font-weight:600;margin-top:2px}
+
+
+
+.keyboard-instructions span { display: inline-block; background: rgba(255, 255, 255, 0.08); padding: 2px 7px; border-radius: 5px; margin: 0 2px; color:var(--text) }
+
+.page-transition {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 150;
+  display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+}
+.page-transition.active { opacity: 1; pointer-events: all; }
+
+/* ================== Toast ================== */
+.toast{position:fixed;top:70px;right:20px;z-index:300;background:linear-gradient(135deg,var(--primary1),var(--primary2));color:#050512;
+  padding:14px 22px;border-radius:14px;font-weight:600;font-size:13.5px;box-shadow:0 14px 34px rgba(0,0,0,.45);
+  transform:translateX(140%);transition:transform .45s var(--ease);max-width:320px}
+.toast.show{transform:translateX(0)}
+
+/* ================== Watch Modal ================== */
+.watch-overlay{
+  position:fixed;inset:0;background:rgba(3,4,10,0.85);z-index:250;display:none;
+  align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(10px);
+}
+.watch-overlay.active{display:flex}
+.watch-box{
+  width:100%;max-width:1000px;max-height:92vh;overflow:auto;background:linear-gradient(180deg,#0b0e1c,#06070f);
+  border:1px solid var(--border);border-radius:20px;box-shadow:0 40px 90px rgba(0,0,0,.6);
+  display:flex;flex-direction:column;
+}
+.watch-head{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 24px;gap:16px;border-bottom:1px solid var(--border)}
+.watch-head h2{margin:0;font-size:18px;font-weight:600}
+.watch-head .wh-sub{color:var(--muted);font-size:12px;margin-top:4px}
+.watch-close{background:var(--glass);border:1px solid var(--border);width:36px;height:36px;border-radius:50%;color:#fff;font-size:16px;cursor:pointer;flex-shrink:0}
+.watch-body{padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+.player-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden;border:1px solid var(--border)}
+.player-wrap video, .player-wrap iframe{width:100%;height:100%;border:none;display:block}
+.player-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;background:#07080f}
+.ep-panel{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ep-btn{padding:7px 14px;font-size:12px;border-radius:100px;background:var(--glass);border:1px solid var(--border);cursor:pointer;color:var(--text)}
+.ep-btn.active{background:linear-gradient(90deg,var(--primary1),var(--primary2));color:#04040c;font-weight:700;border:none}
+.ep-btn.watched::after{content:" ✓";color:var(--primary2)}
+.server-select{padding:7px 12px;border-radius:100px;background:var(--glass);color:var(--text);border:1px solid var(--border)}
+.progress-line{font-size:12px;color:var(--muted)}
+.manual-mark{display:none;align-items:center;gap:10px;background:rgba(242,200,121,0.08);border:1px solid rgba(242,200,121,0.25);padding:10px 14px;border-radius:12px;font-size:13px}
+.manual-mark button{background:linear-gradient(90deg,var(--gold),#ff9a6e);color:#241300;font-weight:700;border:none}
+.collected-banner{display:none;align-items:center;gap:10px;background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.35);padding:12px 16px;border-radius:12px;font-weight:600;color:var(--primary2)}
+.movie-info-line{font-size:13px;color:var(--muted);line-height:1.6}
+.movie-info-line b{color:var(--text)}
+
+@media(max-width:900px){
+  .gacha-slot{width:110px;height:165px}
+  .book-grid{grid-template-columns:repeat(2,1fr)}
+  .card-info{display:none}
+  .big-gacha-btn{padding:28px 54px;font-size:24px;letter-spacing:2px}
+  #bookSearch{min-width:160px}
+}
+
+/* ================== iPhone / WKWebView ================== */
+html{-webkit-text-size-adjust:100%}
+*{-webkit-tap-highlight-color:transparent}
+body{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+input{-webkit-user-select:text;user-select:text}
+#gachaSection{padding-top:calc(env(safe-area-inset-top) + 56px);min-height:100vh;min-height:100dvh}
+#bookSection{padding-bottom:calc(env(safe-area-inset-bottom) + 100px)}
+.toast{top:calc(env(safe-area-inset-top) + 12px);right:12px}
+.watch-overlay{padding:calc(env(safe-area-inset-top) + 8px) 8px calc(env(safe-area-inset-bottom) + 8px)}
+.watch-box{max-height:100%}
+@media (hover:none){
+  .gacha-slot:hover,.thumb:hover,button:hover,.big-gacha-btn:hover{transform:none}
+}
+@media(max-width:900px){
+  .gacha-row{grid-template-columns:repeat(3,1fr);gap:10px;padding:12px 10px;width:100%;max-width:520px}
+  .gacha-slot{width:100%;height:auto;aspect-ratio:27/40}
+  .watch-head{padding:14px 16px}
+  .watch-body{padding:14px 16px}
+  .book-grid{gap:12px}
+  input,#bookSearch{font-size:16px !important}
+  .action-row{flex-wrap:wrap;justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<div class="top-progress" id="topProgress"></div>
+
+<section id="gachaSection">
+  <div id="loadStatus">Đang tải kho phim...</div>
+  <button id="bigGachaBtn" class="big-gacha-btn">GACHA!</button>
+  <div class="gacha-row" id="gachaRow"></div>
+  <div class="action-row" id="actionRow">
+    <button id="watchBtn" class="watch-btn" disabled="">▶ XEM PHIM ĐÃ CHỌN</button>
+    <button id="rerollBtn" class="reroll-btn">Gacha lại</button>
+  </div>
+</section>
+
+<section id="bookSection">
+  <div class="book-title"> Bộ Sưu Tập</div>
+  <div class="book-sub" id="statsBottom">Đang tải...</div>
+  <div class="book-controls">
+    <div class="book-tabs">
+      <button class="tab-btn active" id="tabAll" data-tab="all"> Toàn bộ</button>
+      <button class="tab-btn" id="tabWatched" data-tab="watched"> Đã xem</button>
+    </div>
+    <div class="book-search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="bookSearch" placeholder="Tìm phim trong bộ sưu tập...">
+    </div>
+  </div>
+  <div class="book-controls">
+    <button id="prevPage">‹ Trước</button>
+    <div class="page-indicator">Trang <input id="pageInput" type="number" min="1" value="1" style="width:60px;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit"> <span id="pageCount">/ 1</span></div>
+    <button id="nextPage">Sau ›</button>
+    <button id="resetBtn">Xoá bộ sưu tập</button>
+  </div>
+  <div class="book-grid" id="bookGrid"></div>
+</section>
+
+<div id="cardInfo" class="card-info" style="display:none"></div>
+<div class="page-transition" id="pageTransition"></div>
+<div class="toast" id="toast"></div>
+
+<!-- Watch Modal -->
+<div class="watch-overlay" id="watchOverlay">
+  <div class="watch-box">
+    <div class="watch-head">
+      <div>
+        <h2 id="whTitle">Đang tải...</h2>
+        <div class="wh-sub" id="whSub"></div>
+      </div>
+      <button class="watch-close" id="watchCloseBtn">✕</button>
+    </div>
+    <div class="watch-body">
+      <div class="collected-banner" id="collectedBanner">🎉 Đã thu thập phim này vào bộ sưu tập!</div>
+      <div class="player-wrap" id="playerWrap">
+        <div class="player-loading" id="playerLoading">Đang tải trình phát...</div>
+      </div>
+      <div class="manual-mark" id="manualMark">
+        <span>Không thể tự động nhận diện tiến trình xem ở chế độ nhúng. Xem xong tập này thì bấm nút:</span>
+        <button id="manualMarkBtn">Đã xem xong tập này</button>
+      </div>
+      <div class="ep-panel" id="serverPanel"></div>
+      <div class="ep-panel" id="epPanel"></div>
+      <div class="progress-line" id="progressLine"></div>
+      <div class="movie-info-line" id="movieInfoLine"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =======================================================================
+   Movie Gacha — powered by KKPhim (phimapi.com) public API
+   ======================================================================= */
+const API_BASE = 'https://phimapi.com';
+const LIST_TYPES = ['phim-le','phim-bo','hoat-hinh','tv-shows'];
+let nextPageByType = {}; LIST_TYPES.forEach(t => nextPageByType[t] = 1);
+const PAGES_PER_LOAD = 2; // pages per type per load batch
+
+const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="230" height="340"><rect width="100%" height="100%" fill="#132036"/><text x="50%" y="50%" fill="#7dd3fc" font-size="18" text-anchor="middle" dy=".3em" font-family="sans-serif">No Image</text></svg>'
+);
+
+let catalog = [];               // { slug, name, origin_name, poster, year, quality, lang, episode_current, type }
+let catalogMap = new Map();     // slug -> item (dedupe)
+let owned = JSON.parse(localStorage.getItem('movie_gacha_owned_v1') || '{}');      // slug -> {name, poster, year, collectedAt}
+let progress = JSON.parse(localStorage.getItem('movie_gacha_progress_v1') || '{}'); // slug -> {watched:[epIdx,...], total}
+
+const gachaRow = document.getElementById('gachaRow'), bookGrid = document.getElementById('bookGrid');
+const statsBottom = document.getElementById('statsBottom');
+const cardInfo = document.getElementById('cardInfo');
+const bigGachaBtn = document.getElementById('bigGachaBtn');
+const actionRow = document.getElementById('actionRow');
+const watchBtn = document.getElementById('watchBtn');
+const rerollBtn = document.getElementById('rerollBtn');
+const pageTransition = document.getElementById('pageTransition');
+const loadStatus = document.getElementById('loadStatus');
+const toastEl = document.getElementById('toast');
+
+
+const perPage = 9; let page = 1, totalPages = 1;
+const pageInput = document.getElementById('pageInput'), pageCount = document.getElementById('pageCount');
+const tabAllBtn = document.getElementById('tabAll'), tabWatchedBtn = document.getElementById('tabWatched');
+const bookSearchInput = document.getElementById('bookSearch');
+let bookTab = 'all';      // 'all' = toàn bộ kho phim (đánh dấu đã thu thập) | 'watched' = những phim đã xem
+let bookSearchQuery = '';
+
+let currentSelectedIndex = -1;
+let gachaCards = [];
+
+function toast(msg, ms){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastEl._t);
+  toastEl._t = setTimeout(()=>toastEl.classList.remove('show'), ms || 3200);
+}
+
+/* ---------- Image URL helper ---------- */
+function resolveImg(url, pathImage){
+  if(!url) return '';
+  if(/^https?:\/\//i.test(url)) return url;
+  return (pathImage || '') + url;
+}
+
+/* ---------- Load catalog from KKPhim ---------- */
+let totalPagesByType = {}; LIST_TYPES.forEach(t => totalPagesByType[t] = null); // null = chưa biết
+const topProgress = document.getElementById('topProgress');
+
+/* Danh sách các cách gọi API: thử trực tiếp trước, nếu bị chặn CORS / lỗi mạng
+   thì tự động chuyển qua proxy CORS công khai. Proxy nào tải thành công lần
+   trước sẽ được ưu tiên thử trước ở lần sau để tăng tốc. */
+const CORS_PROXIES = [
+  null, // gọi thẳng, không qua proxy
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?url=',
+  'https://thingproxy.freeboard.io/fetch/'
+];
+let preferredProxyIdx = 0;
+
+function buildProxyUrl(proxy, url){
+  return proxy ? (proxy + encodeURIComponent(url)) : url;
+}
+
+/* Fetch JSON có timeout + retry + tự chuyển proxy khi bị lỗi (CORS, mất mạng, 5xx...) */
+async function fetchJSONResilient(url){
+  const attemptsPerProxy = 2;
+  let lastErr = null;
+  for(let step = 0; step < CORS_PROXIES.length; step++){
+    const proxyIdx = (preferredProxyIdx + step) % CORS_PROXIES.length;
+    const proxy = CORS_PROXIES[proxyIdx];
+    const fetchUrl = buildProxyUrl(proxy, url);
+    for(let attempt = 1; attempt <= attemptsPerProxy; attempt++){
+      const controller = new AbortController();
+      const timer = setTimeout(()=>controller.abort(), 15000);
+      try{
+        const res = await fetch(fetchUrl, { signal: controller.signal, cache: 'no-store' });
+        clearTimeout(timer);
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        const json = await res.json();
+        preferredProxyIdx = proxyIdx; // ghi nhớ cách gọi vừa thành công, ưu tiên dùng tiếp
+        return json;
+      } catch(err){
+        clearTimeout(timer);
+        lastErr = err;
+        // nghỉ ngắn rồi thử lại (backoff tăng dần) trước khi đổi proxy/thử lại
+        await new Promise(r=>setTimeout(r, 250 * attempt));
+      }
+    }
+  }
+  throw lastErr || new Error('Không thể tải dữ liệu');
+}
+
+async function fetchListPage(type, page){
+  const url = `${API_BASE}/danh-sach/${type}?page=${page}`;
+  const json = await fetchJSONResilient(url);
+  const pathImage = json.pathImage || '';
+  const items = json.items || [];
+  const pagination = (json.params && json.params.pagination) || json.pagination || null;
+  const totalPages = pagination ? (pagination.totalPages || null) : null;
+  const list = items.map(it => ({
+    slug: it.slug,
+    name: it.name,
+    origin_name: it.origin_name || '',
+    poster: resolveImg(it.poster_url || it.thumb_url, pathImage),
+    year: it.year || '',
+    quality: it.quality || '',
+    lang: it.lang || '',
+    episode_current: it.episode_current || '',
+    type: type
+  }));
+  return { items: list, totalPages };
+}
+
+/* Số lần một trang cụ thể đã bị lỗi liên tiếp (type:page -> count).
+   Chỉ khi vượt ngưỡng mới bỏ qua trang đó, để không bị kẹt vô hạn. */
+const pageFailCount = {};
+const MAX_PAGE_FAILS = 8; // ~ (2 attempt x 4 proxy) x 8 lượt loadCatalogBatch mới bỏ cuộc
+
+/* Tải MỘT vòng (PAGES_PER_LOAD trang / mỗi loại phim), trả về số phim mới thêm.
+   Trang nào tải lỗi sẽ KHÔNG bị bỏ qua — con trỏ trang giữ nguyên để vòng
+   loadCatalogBatch kế tiếp tự động thử lại, đảm bảo mỗi lần vào trang đều
+   tải được đầy đủ (max) số phim thay vì dừng nửa chừng do lỗi tạm thời. */
+async function loadCatalogBatch(){
+  const jobs = [];
+  for(const type of LIST_TYPES){
+    if(totalPagesByType[type] !== null && nextPageByType[type] > totalPagesByType[type]) continue;
+    for(let p = nextPageByType[type]; p < nextPageByType[type] + PAGES_PER_LOAD; p++){
+      if(totalPagesByType[type] !== null && p > totalPagesByType[type]) break;
+      jobs.push(
+        fetchListPage(type, p)
+          .then(r => ({type, page:p, items:r.items, totalPages:r.totalPages, ok:true}))
+          .catch(err => ({type, page:p, items:[], totalPages:null, ok:false, err}))
+      );
+    }
+  }
+  if(jobs.length === 0) return 0;
+  const results = await Promise.all(jobs);
+  let added = 0;
+  results.forEach(r => {
+    const key = r.type + ':' + r.page;
+    if(r.ok){
+      pageFailCount[key] = 0;
+      // Chỉ tiến con trỏ trang khi trang NÀY (đúng số p) đã tải xong,
+      // tránh trường hợp trang sau tải được trước làm nhảy cóc bỏ sót trang lỗi.
+      if(r.page === nextPageByType[r.type]){
+        nextPageByType[r.type] = r.page + 1;
+      }
+      if(r.totalPages) totalPagesByType[r.type] = r.totalPages;
+      r.items.forEach(it => {
+        if(it.slug && !catalogMap.has(it.slug)){
+          catalogMap.set(it.slug, it);
+          added++;
+        }
+      });
+    } else {
+      pageFailCount[key] = (pageFailCount[key] || 0) + 1;
+      console.warn(`Lỗi tải ${key} (lần ${pageFailCount[key]}):`, r.err);
+      if(pageFailCount[key] >= MAX_PAGE_FAILS && r.page === nextPageByType[r.type]){
+        // Đã thử rất nhiều lần vẫn lỗi -> bỏ qua trang này để không kẹt vô hạn
+        console.warn(`Bỏ qua ${key} sau ${pageFailCount[key]} lần lỗi liên tiếp.`);
+        nextPageByType[r.type] = r.page + 1;
+      }
+    }
+  });
+  catalog = Array.from(catalogMap.values());
+  updateStats();
+  return added;
+}
+
+/* Tính % tiến trình tải dựa trên tổng số trang đã biết của mỗi loại phim */
+function computeLoadProgress(){
+  let known = 0, doneTotal = 0, totalTotal = 0;
+  LIST_TYPES.forEach(t=>{
+    if(totalPagesByType[t] !== null){
+      known++;
+      totalTotal += totalPagesByType[t];
+      doneTotal += Math.min(nextPageByType[t]-1, totalPagesByType[t]);
+    }
+  });
+  if(known === 0) return null;
+  return { percent: totalTotal ? Math.min(100, Math.round(doneTotal/totalTotal*100)) : 0, complete: known === LIST_TYPES.length && LIST_TYPES.every(t=> totalPagesByType[t]!==null && nextPageByType[t] > totalPagesByType[t]) };
+}
+
+/* Tự động tải TOÀN BỘ kho phim ngay từ đầu, không cần bấm "tải thêm" */
+let autoLoading = false;
+async function autoLoadFullCatalog(){
+  if(autoLoading) return;
+  autoLoading = true;
+  loadStatus.textContent = 'Đang tải kho phim từ KKPhim...';
+  let round = 0;
+  while(true){
+    const added = await loadCatalogBatch();
+    round++;
+    renderBook();
+    bigGachaBtn.disabled = catalog.length === 0;
+
+    const prog = computeLoadProgress();
+    if(prog){
+      topProgress.style.width = prog.percent + '%';
+      loadStatus.textContent = `Đang tải kho phim... ${catalog.length} phim (${prog.percent}%)`;
+      if(prog.complete) break;
+    } else {
+      loadStatus.textContent = `Đang tải kho phim... ${catalog.length} phim`;
+    }
+    if(added === 0 && round > 1){
+      // không còn trang nào để tải nữa (hết dữ liệu hoặc lỗi mạng liên tục)
+      const stillPending = LIST_TYPES.some(t => totalPagesByType[t]===null || nextPageByType[t] <= totalPagesByType[t]);
+      if(!stillPending) break;
+    }
+    await new Promise(r=>setTimeout(r, 120)); // nghỉ nhẹ giữa các đợt để không dồn API
+  }
+  topProgress.classList.add('done');
+  if(catalog.length === 0){
+    loadStatus.textContent = '⚠️ Không tải được dữ liệu phim từ KKPhim. Vui lòng kiểm tra kết nối mạng và tải lại trang.';
+  } else {
+    loadStatus.textContent = `   ${catalog.length} phim.`;
+    setTimeout(()=>{ if(topProgress.classList.contains('done')) loadStatus.style.opacity='.7'; }, 1500);
+  }
+  updateStats();
+  renderBook();
+  autoLoading = false;
+}
+
+/* ---------- Stats ---------- */
+function updateStats(){
+  const ownedCount = Object.keys(owned).length;
+  const watchedCount = Object.keys(progress).filter(s => progress[s] && progress[s].watched && progress[s].watched.length > 0).length;
+  statsBottom.textContent = `Đã thu thập: ${ownedCount}/${catalog.length || '...'} · Đã xem: ${watchedCount} phim`;
+}
+function saveOwned(){ localStorage.setItem('movie_gacha_owned_v1', JSON.stringify(owned)); updateStats(); }
+function saveProgress(){ localStorage.setItem('movie_gacha_progress_v1', JSON.stringify(progress)); }
+
+/* ---------- Render collection book ---------- */
+function blankCard(){
+  const div = document.createElement('div'); div.className='thumb grayscale';
+  div.innerHTML = `<div class="thumb-inner"><img src="${PLACEHOLDER}" alt="blank"></div>`;
+  return div;
+}
+function getWatchedList(){
+  return Object.keys(progress)
+    .filter(slug => progress[slug] && progress[slug].watched && progress[slug].watched.length > 0)
+    .map(slug => catalogMap.get(slug))
+    .filter(Boolean)
+    .reverse(); // phim xem gần đây lên trước
+}
+function applyBookSearch(list){
+  if(!bookSearchQuery) return list;
+  return list.filter(c =>
+    (c.name || '').toLowerCase().includes(bookSearchQuery) ||
+    (c.origin_name || '').toLowerCase().includes(bookSearchQuery)
+  );
+}
+function renderBook(){
+  bookGrid.innerHTML = '';
+
+  if(bookTab === 'all' && catalog.length === 0){
+    for(let i=0;i<9;i++) bookGrid.appendChild(blankCard());
+    pageInput.value = 1; pageCount.textContent = '/ 1';
+    return;
+  }
+
+  const baseList = bookTab === 'watched' ? getWatchedList() : catalog;
+  const source = applyBookSearch(baseList);
+
+  if(source.length === 0){
+    const div = document.createElement('div'); div.className = 'book-empty';
+    div.textContent = bookSearchQuery
+      ? `Không tìm thấy phim nào khớp với "${bookSearchQuery}".`
+      : (bookTab === 'watched' ? 'Bạn chưa xem phim nào. Hãy gacha và xem thử một bộ phim!' : 'Chưa có dữ liệu phim.');
+    bookGrid.appendChild(div);
+    pageInput.value = 1; pageCount.textContent = '/ 1';
+    return;
+  }
+
+  totalPages = Math.max(1, Math.ceil(source.length / perPage));
+  page = Math.min(page, totalPages);
+  pageInput.value = page; pageCount.textContent = `/ ${totalPages}`;
+  const start = (page-1)*perPage; const slice = source.slice(start, start+perPage);
+  slice.forEach(c=>{
+    const isOwned = !!owned[c.slug];
+    const p = progress[c.slug];
+    const inProgress = !isOwned && p && p.watched && p.watched.length > 0;
+    const wrap = document.createElement('div');
+    wrap.className = 'thumb' + (isOwned ? ' owned' : (inProgress ? ' inprogress' : ' grayscale'));
+    wrap.dataset.slug = c.slug;
+    const inner = document.createElement('div'); inner.className = 'thumb-inner';
+    if(inProgress){ inner.dataset.progress = `⏳ ${p.watched.length}/${p.total || '?'} tập`; }
+    inner.innerHTML = `<img src="${c.poster || PLACEHOLDER}" alt="${escapeHtml(c.name)}" onerror="this.src='${PLACEHOLDER}'">`;
+    wrap.appendChild(inner); bookGrid.appendChild(wrap);
+
+    wrap.addEventListener('mouseenter', (ev)=>{ showCardInfo(ev, c, isOwned); });
+    wrap.addEventListener('mousemove', (ev)=>{ moveCardInfo(ev); });
+    wrap.addEventListener('mouseleave', ()=>{ hideCardInfo(); });
+    wrap.addEventListener('click', ()=>{ openWatchModal(c); });
+  });
+}
+
+/* ---------- Gacha logic ---------- */
+function randomIndices(n){
+  const result=[], used=new Set();
+  if(catalog.length===0) return result;
+  const count = Math.min(n, catalog.length);
+  while(result.length<count){
+    const i = Math.floor(Math.random()*catalog.length);
+    if(!used.has(i)){ result.push(i); used.add(i); }
+  }
+  return result;
+}
+
+async function doGacha(){
+  if(!catalog.length){ toast('Kho phim chưa tải xong!'); return; }
+
+  bigGachaBtn.style.display = 'none';
+  gachaRow.innerHTML = '';
+  currentSelectedIndex = -1;
+
+  const picks = randomIndices(10);
+  gachaCards = picks.map(i => catalog[i]);
+
+  for(let i=0;i<gachaCards.length;i++){
+    const c = gachaCards[i];
+    const slot = document.createElement('div');
+    slot.className='gacha-slot';
+    slot.dataset.index = i;
+
+    const inner = document.createElement('div'); inner.className='card-inner';
+    const back = document.createElement('div'); back.className='card-face card-back';
+    back.innerHTML = `<img class="card-img" src="./backcard.png" alt="Card Back" onerror="this.onerror=null;this.src='./backcard.svg'">`;
+    const front = document.createElement('div'); front.className='card-face card-front';
+    front.innerHTML = `<img class="card-img" src="${c.poster || PLACEHOLDER}" alt="${escapeHtml(c.name)}" onerror="this.src='${PLACEHOLDER}'">
+      <div class="movie-meta"><div class="mname">${escapeHtml(c.name)}</div><div class="mmeta">${c.year || ''} · ${escapeHtml(c.quality||'')} · ${escapeHtml(c.episode_current||'')}</div></div>`;
+    inner.appendChild(back); inner.appendChild(front);
+    slot.appendChild(inner); gachaRow.appendChild(slot);
+
+    slot.addEventListener('click', ()=>{
+      currentSelectedIndex = i;
+      updateSelectedCard();
+      flipCard(i);
+    });
+
+    await new Promise(r=>setTimeout(r, 70));
+  }
+
+  actionRow.style.display = 'flex';
+  currentSelectedIndex = 0;
+  updateSelectedCard();
+
+  document.addEventListener('keydown', handleKeyDown);
+}
+
+function flipCard(index) {
+  const slots = gachaRow.querySelectorAll('.gacha-slot');
+  const slot = slots[index];
+  if(!slot) return;
+  const inner = slot.querySelector('.card-inner');
+  if(!inner.classList.contains('flipped')) {
+    inner.classList.add('flipped');
+    slot.classList.add('show-border');
+  }
+  updateWatchBtnState();
+}
+
+function isFlipped(index){
+  const slots = gachaRow.querySelectorAll('.gacha-slot');
+  const slot = slots[index];
+  return slot && slot.querySelector('.card-inner').classList.contains('flipped');
+}
+
+function updateWatchBtnState(){
+  watchBtn.disabled = !(currentSelectedIndex >= 0 && isFlipped(currentSelectedIndex));
+}
+
+function handleKeyDown(event) {
+  const slots = gachaRow.querySelectorAll('.gacha-slot');
+  if (slots.length === 0) {
+    if (event.key === ' ') { event.preventDefault(); if(!bigGachaBtn.disabled) doGacha(); }
+    return;
+  }
+  switch(event.key) {
+    case 'ArrowLeft': event.preventDefault(); if (currentSelectedIndex > 0) { currentSelectedIndex--; updateSelectedCard(); } break;
+    case 'ArrowRight': event.preventDefault(); if (currentSelectedIndex < slots.length - 1) { currentSelectedIndex++; updateSelectedCard(); } break;
+    case 'ArrowUp': event.preventDefault(); if (currentSelectedIndex >= 5) { currentSelectedIndex -= 5; updateSelectedCard(); } break;
+    case 'ArrowDown': event.preventDefault(); if (currentSelectedIndex + 5 < slots.length) { currentSelectedIndex += 5; updateSelectedCard(); } break;
+    case 'Enter': event.preventDefault(); flipCard(currentSelectedIndex); break;
+    case ' ': event.preventDefault(); if(!watchBtn.disabled) watchBtn.click(); break;
+    case 'Escape': event.preventDefault(); closeWatchModal(); break;
+  }
+}
+
+function updateSelectedCard() {
+  const slots = gachaRow.querySelectorAll('.gacha-slot');
+  slots.forEach((slot, index) => { slot.classList.toggle('selected', index === currentSelectedIndex); });
+  updateWatchBtnState();
+}
+
+function endGachaRound(){
+  gachaRow.innerHTML = '';
+  actionRow.style.display = 'none';
+  bigGachaBtn.style.display = 'inline-block';
+  currentSelectedIndex = -1;
+  gachaCards = [];
+  document.removeEventListener('keydown', handleKeyDown);
+}
+
+/* ---------- Watch modal / player ---------- */
+const watchOverlay = document.getElementById('watchOverlay');
+const watchCloseBtn = document.getElementById('watchCloseBtn');
+const whTitle = document.getElementById('whTitle');
+const whSub = document.getElementById('whSub');
+const playerWrap = document.getElementById('playerWrap');
+const serverPanel = document.getElementById('serverPanel');
+const epPanel = document.getElementById('epPanel');
+const progressLine = document.getElementById('progressLine');
+const movieInfoLine = document.getElementById('movieInfoLine');
+const collectedBanner = document.getElementById('collectedBanner');
+const manualMark = document.getElementById('manualMark');
+const manualMarkBtn = document.getElementById('manualMarkBtn');
+
+let currentMovie = null;      // catalog item
+let currentDetail = null;     // full detail from /phim/{slug}
+let currentServerIdx = 0;
+let currentEpIdx = 0;
+let hlsInstance = null;
+
+watchBtn.addEventListener('click', ()=>{
+  if(currentSelectedIndex < 0) return;
+  const card = gachaCards[currentSelectedIndex];
+  if(!card) return;
+  openWatchModal(card);
+});
+rerollBtn.addEventListener('click', endGachaRound);
+watchCloseBtn.addEventListener('click', closeWatchModal);
+watchOverlay.addEventListener('click', (e)=>{ if(e.target === watchOverlay) closeWatchModal(); });
+manualMarkBtn.addEventListener('click', ()=> markEpisodeWatched(currentEpIdx));
+
+async function openWatchModal(card){
+  currentMovie = card;
+  watchOverlay.classList.add('active');
+  whTitle.textContent = card.name;
+  whSub.textContent = card.origin_name || '';
+  playerWrap.innerHTML = '<div class="player-loading">Đang tải thông tin phim...</div>';
+  serverPanel.innerHTML = '';
+  epPanel.innerHTML = '';
+  progressLine.textContent = '';
+  movieInfoLine.textContent = '';
+  manualMark.style.display = 'none';
+  collectedBanner.style.display = owned[card.slug] ? 'flex' : 'none';
+
+  try{
+    const res = await fetch(`${API_BASE}/phim/${card.slug}`);
+    const json = await res.json();
+    if(!json.status || !json.movie){ throw new Error('no data'); }
+    currentDetail = json;
+    const m = json.movie;
+    movieInfoLine.innerHTML = `<b>${escapeHtml(m.name)}</b> (${m.year||''}) — ${escapeHtml(m.lang||'')} · ${escapeHtml(m.quality||'')} · ${escapeHtml(m.time||'')}<br>
+      Thể loại: ${(m.category||[]).map(c=>escapeHtml(c.name)).join(', ') || '—'} &nbsp;|&nbsp; Quốc gia: ${(m.country||[]).map(c=>escapeHtml(c.name)).join(', ') || '—'}`;
+
+    const episodes = json.episodes || [];
+    if(episodes.length === 0){ playerWrap.innerHTML = '<div class="player-loading">Phim này chưa có nguồn phát.</div>'; return; }
+
+    // server select
+    serverPanel.innerHTML = '';
+    if(episodes.length > 1){
+      const label = document.createElement('span'); label.className='progress-line'; label.textContent='Server: ';
+      const sel = document.createElement('select'); sel.className='server-select';
+      episodes.forEach((s, idx)=>{ const opt=document.createElement('option'); opt.value=idx; opt.textContent = s.server_name || ('Server '+(idx+1)); sel.appendChild(opt); });
+      sel.addEventListener('change', ()=>{ currentServerIdx = parseInt(sel.value); currentEpIdx = 0; renderEpisodes(); loadEpisode(currentEpIdx); });
+      serverPanel.appendChild(label); serverPanel.appendChild(sel);
+    }
+
+    currentServerIdx = 0; currentEpIdx = 0;
+
+    // restore progress
+    const total = (episodes[0].server_data || []).length;
+    if(!progress[card.slug]) progress[card.slug] = { watched: [], total };
+    progress[card.slug].total = total;
+
+    renderEpisodes();
+    loadEpisode(0);
+  }catch(err){
+    playerWrap.innerHTML = '<div class="player-loading">⚠️ Không tải được dữ liệu phim. Vui lòng thử lại.</div>';
+  }
+}
+
+function renderEpisodes(){
+  const episodes = (currentDetail && currentDetail.episodes) || [];
+  const server = episodes[currentServerIdx];
+  const list = (server && server.server_data) || [];
+  epPanel.innerHTML = '';
+  const watchedSet = new Set((progress[currentMovie.slug] && progress[currentMovie.slug].watched) || []);
+  list.forEach((ep, idx)=>{
+    const btn = document.createElement('button');
+    btn.className = 'ep-btn' + (idx===currentEpIdx ? ' active':'') + (watchedSet.has(idx) ? ' watched':'');
+    btn.textContent = ep.name || ('Tập ' + (idx+1));
+    btn.addEventListener('click', ()=>{ currentEpIdx = idx; renderEpisodes(); loadEpisode(idx); });
+    epPanel.appendChild(btn);
+  });
+  updateProgressLine();
+}
+
+function updateProgressLine(){
+  const p = progress[currentMovie.slug] || {watched:[], total:0};
+  progressLine.textContent = `Tiến trình: ${p.watched.length}/${p.total} tập đã xem xong.`;
+}
+
+function destroyHls(){
+  if(hlsInstance){ try{ hlsInstance.destroy(); }catch(e){} hlsInstance = null; }
+}
+
+function loadEpisode(idx){
+  destroyHls();
+  manualMark.style.display = 'none';
+  const episodes = (currentDetail && currentDetail.episodes) || [];
+  const server = episodes[currentServerIdx];
+  const list = (server && server.server_data) || [];
+  const ep = list[idx];
+  if(!ep){ playerWrap.innerHTML = '<div class="player-loading">Không có tập này.</div>'; return; }
+
+  const m3u8 = ep.link_m3u8;
+  const embed = ep.link_embed;
+
+  playerWrap.innerHTML = '';
+  if(m3u8){
+    const video = document.createElement('video');
+    video.controls = true; video.autoplay = false; video.playsInline = true;
+    playerWrap.appendChild(video);
+
+    const useEmbedFallback = ()=>{
+      playerWrap.innerHTML = '';
+      if(embed){
+        const iframe = document.createElement('iframe');
+        iframe.src = embed; iframe.allow = 'autoplay; fullscreen; encrypted-media'; iframe.allowFullscreen = true;
+        playerWrap.appendChild(iframe);
+        manualMark.style.display = 'flex';
+      } else {
+        playerWrap.innerHTML = '<div class="player-loading">Không thể phát video của tập này.</div>';
+      }
+    };
+
+    if(video.canPlayType('application/vnd.apple.mpegurl')){
+      video.src = m3u8;
+    } else if(window.Hls && Hls.isSupported()){
+      const hls = new Hls();
+      hlsInstance = hls;
+      hls.loadSource(m3u8);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.ERROR, (evt, data)=>{ if(data && data.fatal) useEmbedFallback(); });
+    } else {
+      useEmbedFallback();
+      return;
+    }
+
+    video.addEventListener('error', useEmbedFallback);
+    video.addEventListener('ended', ()=> markEpisodeWatched(idx));
+    let markedByTime = false;
+    video.addEventListener('timeupdate', ()=>{
+      if(!markedByTime && video.duration && video.currentTime / video.duration > 0.95){
+        markedByTime = true; markEpisodeWatched(idx);
+      }
+    });
+  } else if(embed){
+    const iframe = document.createElement('iframe');
+    iframe.src = embed; iframe.allow = 'autoplay; fullscreen; encrypted-media'; iframe.allowFullscreen = true;
+    playerWrap.appendChild(iframe);
+    manualMark.style.display = 'flex';
+  } else {
+    playerWrap.innerHTML = '<div class="player-loading">Không tìm thấy nguồn phát cho tập này.</div>';
+  }
+}
+
+function markEpisodeWatched(idx){
+  const slug = currentMovie.slug;
+  if(!progress[slug]) progress[slug] = { watched: [], total: 0 };
+  const p = progress[slug];
+  if(!p.watched.includes(idx)){
+    p.watched.push(idx);
+    saveProgress();
+    toast(`Đã xem xong: ${epLabelFor(idx)}`, 2200);
+  }
+  renderEpisodes();
+  renderBook();
+  if(p.total > 0 && p.watched.length >= p.total){
+    collectMovie();
+  }
+}
+
+function epLabelFor(idx){
+  const episodes = (currentDetail && currentDetail.episodes) || [];
+  const server = episodes[currentServerIdx];
+  const list = (server && server.server_data) || [];
+  return (list[idx] && list[idx].name) || ('Tập ' + (idx+1));
+}
+
+function collectMovie(){
+  const slug = currentMovie.slug;
+  if(owned[slug]) return;
+  owned[slug] = {
+    name: currentMovie.name,
+    origin_name: currentMovie.origin_name,
+    poster: currentMovie.poster,
+    year: currentMovie.year,
+    collectedAt: new Date().toISOString()
+  };
+  saveOwned();
+  renderBook();
+  collectedBanner.style.display = 'flex';
+  toast(`🎉 Đã thu thập "${currentMovie.name}" vào bộ sưu tập!`, 4000);
+}
+
+function closeWatchModal(){
+  destroyHls();
+  watchOverlay.classList.remove('active');
+  playerWrap.innerHTML = '';
+  currentMovie = null; currentDetail = null;
+}
+
+
+/* ---------- Controls ---------- */
+bigGachaBtn.onclick = doGacha;
+document.getElementById('resetBtn').onclick = ()=>{
+  if(confirm('Xoá toàn bộ bộ sưu tập & tiến trình xem đã lưu?')){
+    owned = {}; progress = {}; saveOwned(); saveProgress(); renderBook();
+  }
+};
+document.getElementById('prevPage').onclick = ()=>{ if(page>1){ page--; renderBook(); } };
+document.getElementById('nextPage').onclick = ()=>{ if(page<totalPages){ page++; renderBook(); } };
+pageInput.addEventListener('change', ()=>{ let v = parseInt(pageInput.value) || 1; if(v<1) v=1; if(v>totalPages) v=totalPages; page = v; renderBook(); });
+
+tabAllBtn.onclick = ()=>{
+  if(bookTab === 'all') return;
+  bookTab = 'all'; page = 1;
+  tabAllBtn.classList.add('active'); tabWatchedBtn.classList.remove('active');
+  renderBook();
+};
+tabWatchedBtn.onclick = ()=>{
+  if(bookTab === 'watched') return;
+  bookTab = 'watched'; page = 1;
+  tabWatchedBtn.classList.add('active'); tabAllBtn.classList.remove('active');
+  renderBook();
+};
+let bookSearchDebounce;
+bookSearchInput.addEventListener('input', ()=>{
+  clearTimeout(bookSearchDebounce);
+  bookSearchDebounce = setTimeout(()=>{
+    bookSearchQuery = bookSearchInput.value.trim().toLowerCase();
+    page = 1;
+    renderBook();
+  }, 180);
+});
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === ' ' && gachaRow.children.length === 0 && !bigGachaBtn.disabled && !watchOverlay.classList.contains('active')) {
+    event.preventDefault();
+    doGacha();
+  }
+});
+
+/* ---------- Floating card info ---------- */
+function showCardInfo(ev, card, isOwned){
+  const p = progress[card.slug];
+  const progText = p && p.total ? `${p.watched.length}/${p.total} tập đã xem` : '';
+  cardInfo.innerHTML = `
+    <img src="${card.poster || PLACEHOLDER}" alt="${escapeHtml(card.name)}" onerror="this.src='${PLACEHOLDER}'" ${isOwned ? '' : 'style="filter:grayscale(100%) brightness(.6);"'}>
+    <div class="ci-name">${escapeHtml(card.name)}</div>
+    <div class="ci-meta">${card.year||''} · ${escapeHtml(card.quality||'')} · ${escapeHtml(card.episode_current||'')}</div>
+    <div class="ci-status" style="color:${isOwned ? '#6ee7b7' : '#ffd27a'}">${isOwned ? '✓ Đã thu thập' : (progText ? progText+' — chưa hoàn thành' : 'Chưa thu thập — hãy gacha & xem trọn phim!')}</div>
+  `;
+  cardInfo.style.display = 'flex';
+  moveCardInfo(ev);
+}
+function moveCardInfo(ev){ moveCardInfoToPosition(ev.clientX, ev.clientY); }
+function moveCardInfoToPosition(x, y) {
+  const pad = 12;
+  cardInfo.style.maxWidth = Math.min(320, window.innerWidth - pad*2) + 'px';
+  const box = cardInfo.getBoundingClientRect();
+  const xCandidate = x + 18;
+  const fitsRight = (xCandidate + box.width + pad) < window.innerWidth;
+  if(fitsRight){
+    cardInfo.style.left = (x + 18) + 'px';
+    cardInfo.style.top = Math.max(pad, Math.min(window.innerHeight - box.height - pad, y - box.height/2)) + 'px';
+  } else {
+    cardInfo.style.left = Math.max(pad, x - box.width - 18) + 'px';
+    cardInfo.style.top = Math.max(pad, Math.min(window.innerHeight - box.height - pad, y - box.height/2)) + 'px';
+  }
+}
+function hideCardInfo(){ cardInfo.style.display = 'none'; cardInfo.innerHTML = ''; }
+
+/* ---------- Utils ---------- */
+function escapeHtml(text){ return String(text || '').replace(/[&<>"]/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m])); }
+
+/* ---------- Start ---------- */
+autoLoadFullCatalog();
+</script>
+
+</body></html>
